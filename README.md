@@ -32,3 +32,14 @@ cd MICCAI2019/
 docker pull nielsborie/ml-docker
 docker run --name ML-env -p 8887:8888 nielsborie/ml-docker
 ```
+
+## No Virtualenv
+
+If you run into problems with both, you can install all libraries locally. 
+
+```bash
+git clone https://github.com/MatthewMong/MICCAI2019.git
+cd MICCAI2019/
+pip install -r requirements.txt
+```
+
