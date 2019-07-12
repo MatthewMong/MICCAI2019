@@ -3,7 +3,7 @@ import os
 import glob
 from PIL import Image
 import numpy as np
-DEBUG=True
+DEBUG=False
 
 #Examples of how to use:
 #batch_extract('D:/imgs/Test/Maps','D:/imgs/Test/Jpegs')
@@ -12,7 +12,7 @@ DEBUG=True
 
 #Should perform a batch extraction to filter all photos based on maps, feed it the directory with your png maps, and your jpg locations
 def batch_extract(png_location,jpg_location):
-    dict = {0: [], 1: [], 2: [], 3: [], 4: [], 5: []}
+    dict = {0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6:[]}
     jpgs=os.listdir(jpg_location)
     for image in jpgs:
         value=glob.glob(png_location+'/'+image.strip('.jpg')+'_classimg_nonconvex.png')
@@ -46,15 +46,24 @@ def image_extract(jpg,png):
     abz2=img_arr.reshape(width*height,3)
     abz2copy=np.empty(abz2.shape)
     value=np.unique(abz)
-    value=value[1]
-    for x in abz.nonzero():
-        abz2copy[x]=abz2[x]
-    abz2copy=abz2copy.reshape(height,width,3)
-    img_arr=abz2copy
-    final=Image.fromarray(img_arr.astype('uint8'))
-    if DEBUG==True:
-        final.show()
-    returnval.append(value)
-    returnval.append(final)
+    if(np.size(value)>2):
+        print("error")
+    else:
+        print (value)
+    if(np.array_equal(np.unique(value),[0])):
+        returnval.append(0)
+        returnval.append(img)
+    else:
+        value=value[1]
+        for x in abz.nonzero():
+            abz2copy[x]=abz2[x]
+        abz2copy=abz2copy.reshape(height,width,3)
+        img_arr=abz2copy
+        final=Image.fromarray(img_arr.astype('uint8'))
+        if DEBUG==True:
+            final.show()
+        returnval.append(value)
+        returnval.append(final)
     return returnval
 
+batch_extract('D:/imgs/Maps1/maps1','D:/imgs/imgs')
