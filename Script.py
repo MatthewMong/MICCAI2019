@@ -18,7 +18,11 @@ def batch_extract(png_location,jpg_location):
         value=glob.glob(png_location+'/'+image.strip('.jpg')+'_classimg_nonconvex.png')
         if(len(value)==1):
             eximage=image_extract(jpg_location+'/'+image,png_location+'/'+image.strip('.jpg')+'_classimg_nonconvex.png')
-            dict[eximage[0]].append(eximage[1])
+            i=0
+            while i<len(eximage):
+                dict[eximage[i]].append(eximage[i+1])
+                i=i+2
+            print(dict)
         elif(len(value)==0):
             print("no file with that name")
         else:
@@ -79,4 +83,4 @@ def image_extract(jpg,png):
         returnval.append(final)
     return returnval
 
-batch_extract('D:/imgs/Test/Maps','D:/imgs/Test/Jpegs')
+batch_extract('D:/imgs/Maps1/maps1','D:/imgs/imgs')
