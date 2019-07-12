@@ -3,7 +3,7 @@ import os
 import glob
 from PIL import Image
 import numpy as np
-DEBUG=False
+DEBUG=True
 
 #Examples of how to use:
 #batch_extract('D:/imgs/Test/Maps','D:/imgs/Test/Jpegs')
@@ -43,18 +43,30 @@ def image_extract(jpg,png):
     #pls=Image.fromarray(img_arr)
     #pls.show()
     abz=img_map_arr.flatten()
+    abzcopy=abz.copy()
     abz2=img_arr.reshape(width*height,3)
     abz2copy=np.empty(abz2.shape)
     value=np.unique(abz)
-    if(np.size(value)>2):
-        print("error")
-    else:
-        print (value)
-    if(np.array_equal(np.unique(value),[0])):
+    value=value[value>0]
+    if np.array_equal(np.unique(value),[])or value.size==0 or np.array_equal(value,[]):
         returnval.append(0)
         returnval.append(img)
+    elif(np.size(value)>1):
+        for values in value:
+            abzcopy=abz.copy()
+            abzcopy[abzcopy!=values]=0
+            zeros=abzcopy.nonzero()
+            abz2copy = np.empty(abz2.shape)
+            for x in zeros:
+                abz2copy[x]=abz2[x]
+            abz2copy=abz2copy.reshape(height,width,3)
+            img_arr=abz2copy
+            final=Image.fromarray(img_arr.astype('uint8'))
+            if DEBUG==True:
+                final.show()
+            returnval.append(values)
+            returnval.append(final)
     else:
-        value=value[1]
         for x in abz.nonzero():
             abz2copy[x]=abz2[x]
         abz2copy=abz2copy.reshape(height,width,3)
@@ -62,8 +74,9 @@ def image_extract(jpg,png):
         final=Image.fromarray(img_arr.astype('uint8'))
         if DEBUG==True:
             final.show()
-        returnval.append(value)
+        print(jpg)
+        returnval.append(value[0])
         returnval.append(final)
     return returnval
 
-batch_extract('D:/imgs/Maps1/maps1','D:/imgs/imgs')
+batch_extract('D:/imgs/Test/Maps','D:/imgs/Test/Jpegs')
