@@ -83,4 +83,4 @@ def image_extract(jpg,png):
         returnval.append(final)
     return returnval
 
-batch_extract('D:/imgs/Maps1/maps1','D:/imgs/imgs')
+#batch_extract('D:/imgs/Maps1/maps1','D:/imgs/imgs')
