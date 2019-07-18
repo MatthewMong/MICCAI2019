@@ -1,10 +1,12 @@
 """ Data Loading and Processing Scripts go here."""
-import os
 import glob
-from PIL import Image
+import os
+from io import BytesIO
+
 import numpy as np
 import tensorflow as tf
-from io import BytesIO
+from PIL import Image
+
 DEBUG = False
 
 
@@ -119,15 +121,18 @@ def tf_data_process(png_location, jpg_location):
     dataset = tf.data.Dataset.zip((pictures, labels))
     return dataset
 
+
 def preprocess_image(image):
-  image = tf.image.decode_jpeg(image, channels=3)
-  image = tf.image.resize(image, [192, 192])
-  image /= 255.0  # normalize to [0,1] range
-  return image
+    image = tf.image.decode_jpeg(image, channels=3)
+    image = tf.image.resize(image, [192, 192])
+    image /= 255.0  # normalize to [0,1] range
+    return image
+
 
 def load_and_preprocess_image(path):
-  image = tf.read_file(path)
-  return preprocess_image(image)
+    image = tf.read_file(path)
+    return preprocess_image(image)
+
 
 def convertToJpeg(im):
     with BytesIO() as f:
