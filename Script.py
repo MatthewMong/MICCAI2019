@@ -4,7 +4,7 @@ import glob
 from PIL import Image
 import numpy as np
 import tensorflow as tf
-
+from io import BytesIO
 DEBUG = False
 
 
@@ -47,7 +47,7 @@ def batch_extract_to_Arr(png_location, jpg_location):
             while i < len(eximage):
                 Labels.append(eximage[i])
                 i = i + 1
-                Pictures.append(eximage[i])
+                Pictures.append(preprocess_image(convertToJpeg(eximage[i])))
                 i = i + 1
         elif (len(value) == 0):
             print("no file with that name")
@@ -113,11 +113,26 @@ def image_extract(jpg, png):
 
 
 def tf_data_process(png_location, jpg_location):
-    arr = batch_extract(png_location, jpg_location)
-    pictures = tf.constant(arr[1])
-    labels = tf.constant(arr[0])
-    dataset = tf.data.Dataset.from_tensor_slices((pictures, labels))
+    arr = batch_extract_to_Arr(png_location, jpg_location)
+    pictures = tf.data.Dataset.from_tensor_slices(arr[1])
+    labels = tf.data.Dataset.from_tensor_slices(arr[0])
+    dataset = tf.data.Dataset.zip((pictures, labels))
     return dataset
+
+def preprocess_image(image):
+  image = tf.image.decode_jpeg(image, channels=3)
+  image = tf.image.resize(image, [192, 192])
+  image /= 255.0  # normalize to [0,1] range
+  return image
+
+def load_and_preprocess_image(path):
+  image = tf.read_file(path)
+  return preprocess_image(image)
+
+def convertToJpeg(im):
+    with BytesIO() as f:
+        im.save(f, format='JPEG')
+        return f.getvalue()
 
 
 # dict=batch_extract('D:/imgs/Maps1/maps1','D:/imgs/imgs')
