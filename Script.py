@@ -5,10 +5,15 @@ from io import BytesIO
 
 import numpy as np
 import tensorflow as tf
+from tensorflow import keras
 from PIL import Image
 
 DEBUG = False
+tf.enable_eager_execution()
 
+
+# The main function you need is tf_data_process(), it takes png files location, and jpg files location and returns a tensorflow dataset.
+# please set the compression rate of the photos by yourself by changing image = tf.image.resize(image, [192, 192]) to whatever number you want
 
 # Examples of how to use:
 # batch_extract('D:/imgs/Test/Maps','D:/imgs/Test/Jpegs')
@@ -118,8 +123,16 @@ def tf_data_process(png_location, jpg_location):
     arr = batch_extract_to_Arr(png_location, jpg_location)
     pictures = tf.data.Dataset.from_tensor_slices(arr[1])
     labels = tf.data.Dataset.from_tensor_slices(arr[0])
-    dataset = tf.data.Dataset.zip((pictures, labels))
+    dataset = tf.data.Dataset.zip({"pictures": pictures, "labels": labels})
     return dataset
+
+
+def keras_data_process(png_location, jpg_location):
+    arr = batch_extract_to_Arr(png_location, jpg_location)
+    pictures = arr[1]
+    labels = arr[0]
+    print(pictures)
+    return pictures, labels
 
 
 def preprocess_image(image):
@@ -140,5 +153,7 @@ def convertToJpeg(im):
         return f.getvalue()
 
 
-# dict=batch_extract('D:/imgs/Maps1/maps1','D:/imgs/imgs')
-print(tf_data_process('D:/imgs/Test/Maps', 'D:/imgs/Test/Jpegs'))
+dataset = tf_data_process('D:/imgs/Test/Maps', 'D:/imgs/Test/Jpegs')
+
+# model.fit(train_images, train_labels, epochs=5)
+# test_loss, test_acc = model.evaluate(test_images, test_labels)
