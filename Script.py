@@ -4,9 +4,10 @@ import os
 from io import BytesIO
 
 import numpy as np
+import pandas as pandas
 import tensorflow as tf
-from tensorflow import keras
 from PIL import Image
+from tensorflow import keras
 
 DEBUG = False
 tf.enable_eager_execution()
@@ -60,13 +61,37 @@ def batch_extract_to_Arr(png_location, jpg_location):
             print("no file with that name")
         else:
             print('error, more than one file with same name exists')
-
     return [Labels, Pictures]
+
+
+def keras_batch_extract_to_Arr(png_location, jpg_location):
+    Labels = []
+    Pictures = []
+    jpgs = os.listdir(jpg_location)
+    for image in jpgs:
+        value = glob.glob(png_location + '/' + image.strip('.jpg') + '_classimg_nonconvex.png')
+        if (len(value) == 1):
+            eximage = image_extract(jpg_location + '/' + image,
+                                    png_location + '/' + image.strip('.jpg') + '_classimg_nonconvex.png')
+            i = 0
+            while i < len(eximage):
+                (Labels.append(eximage[i]))
+                i = i + 1
+                (Pictures.append(preprocess_image(convertToJpeg(eximage[i]))))
+                i = i + 1
+        elif (len(value) == 0):
+            print("no file with that name")
+        else:
+            print('error, more than one file with same name exists')
+    Pictures = np.array(Pictures)
+    Labels = np.array(Labels)
+    return Labels, Pictures
 
 
 # this function extracts the image based on the maps we are given, it serves as a helper function to batch_extract, it does not differentiate between different levels within an image
 # both inputs should be the locations of your png and jpg files
 def image_extract(jpg, png):
+    print(jpg)
     img_map = Image.open(png)
     returnval = []
     with open(jpg, 'rb') as img_file:
@@ -78,11 +103,7 @@ def image_extract(jpg, png):
     img = Image.open(jpg)
     img_map_arr = np.array(img_map, dtype='uint8')
     img_arr = np.array(img, dtype='uint8')
-    # print(img_arr[12,4])
-    # pls=Image.fromarray(img_arr)
-    # pls.show()
     abz = img_map_arr.flatten()
-    abzcopy = abz.copy()
     abz2 = img_arr.reshape(width * height, 3)
     abz2copy = np.empty(abz2.shape)
     value = np.unique(abz)
@@ -113,7 +134,6 @@ def image_extract(jpg, png):
         final = Image.fromarray(img_arr.astype('uint8'))
         if DEBUG == True:
             final.show()
-        print(jpg)
         returnval.append(value[0])
         returnval.append(final)
     return returnval
@@ -127,17 +147,26 @@ def tf_data_process(png_location, jpg_location):
     return dataset
 
 
+def pandas_data_process(png_location, jpg_location):
+    dataframe = pandas.DataFrame(data=batch_extract(png_location, jpg_location))
+    print('done loading')
+    return dataframe
+
+
 def keras_data_process(png_location, jpg_location):
-    arr = batch_extract_to_Arr(png_location, jpg_location)
-    pictures = arr[1]
-    labels = arr[0]
-    print(pictures)
+    labels, pictures = keras_batch_extract_to_Arr(png_location, jpg_location)
+    print('done loading')
+    # pictures=np.array(pictures)
+    print('done pictures')
+    # labels=np.array(labels)
+    print('done labels')
     return pictures, labels
 
 
 def preprocess_image(image):
     image = tf.image.decode_jpeg(image, channels=3)
-    image = tf.image.resize(image, [192, 192])
+    image = tf.image.resize(image, [256, 256])
+    image = image.numpy()
     image /= 255.0  # normalize to [0,1] range
     return image
 
@@ -153,7 +182,52 @@ def convertToJpeg(im):
         return f.getvalue()
 
 
-dataset = tf_data_process('D:/imgs/Test/Maps', 'D:/imgs/Test/Jpegs')
+pictures, labels = keras_data_process('D:/imgs/Maps1/maps1', 'D:/imgs/imgs')
+test_pics, test_labels = keras_data_process('D:/imgs/Test/TestMaps', 'D:/imgs/Test/TestJpegs')
 
+# test=tf_data_process('D:/imgs/Test/TestMaps', 'D:/imgs/Test/TestJpegs')
+model = keras.Sequential([
+    keras.layers.SeparableConv2D(32, (3, 3), padding="same",
+                                 input_shape=(256, 256, 3)),
+    keras.layers.Activation("relu"),
+    keras.layers.BatchNormalization(axis=-1),
+    keras.layers.MaxPooling2D(pool_size=(2, 2)),
+    keras.layers.Dropout(0.25),
+    keras.layers.SeparableConv2D(64, (3, 3), padding="same"),
+    keras.layers.Activation("relu"),
+    keras.layers.BatchNormalization(axis=-1),
+    keras.layers.SeparableConv2D(64, (3, 3), padding="same"),
+    keras.layers.Activation("relu"),
+    keras.layers.BatchNormalization(axis=-1),
+    keras.layers.MaxPooling2D(pool_size=(2, 2)),
+    keras.layers.Dropout(0.25),
+    keras.layers.Flatten(),
+    keras.layers.Dense(256),
+    keras.layers.Activation("relu"),
+    keras.layers.BatchNormalization(),
+    keras.layers.Dropout(0.5),
+
+    # softmax classifier
+    keras.layers.Dense(7),
+    keras.layers.Activation("softmax")
+    # keras.layers.Flatten(input_shape=(256,256,3)),
+    # #keras.layers.SeparableConv2D(32,(3,3), padding="same"),
+    # keras.layers.Activation("relu"),
+    # #keras.layers.MaxPool2D(pool_size=(2,2)),
+    # keras.layers.Dropout(.25),
+    # #keras.layers.Convolution1D(filters=5,kernel_size=3),
+    # keras.layers.Dense(128, activation=tf.nn.relu),
+    # keras.layers.Dense(7, activation=tf.nn.softmax),
+
+])
+
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+
+model.fit(pictures, labels, epochs=9)
+# model.fit(pictures,labels, epochs=9)
 # model.fit(train_images, train_labels, epochs=5)
-# test_loss, test_acc = model.evaluate(test_images, test_labels)
+test_loss, test_acc = model.evaluate(test_pics, test_labels)
+
+print('Test accuracy:', test_acc)
