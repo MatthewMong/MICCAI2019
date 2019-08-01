@@ -165,7 +165,8 @@ def keras_data_process(png_location, jpg_location):
 
 def preprocess_image(image):
     image = tf.image.decode_jpeg(image, channels=3)
-    image = tf.image.resize(image, [256, 256])
+    image = tf.image.resize(image, [512, 512])
+    image = tf.image.rgb_to_grayscale(image)
     image = image.numpy()
     image /= 255.0  # normalize to [0,1] range
     return image
@@ -182,13 +183,56 @@ def convertToJpeg(im):
         return f.getvalue()
 
 
-pictures, labels = keras_data_process('D:/imgs/Maps1/maps1', 'D:/imgs/imgs')
+pictures, labels = keras_data_process('D:/imgs/Test/Maps', 'D:/imgs/Test/Jpegs')
 test_pics, test_labels = keras_data_process('D:/imgs/Test/TestMaps', 'D:/imgs/Test/TestJpegs')
 
 # test=tf_data_process('D:/imgs/Test/TestMaps', 'D:/imgs/Test/TestJpegs')
 model = keras.Sequential([
+    # keras.layers.Conv2D(32, kernel_size=(3, 3), strides=1, activation='relu', input_shape=(256, 256, 1)),
+    # keras.layers.BatchNormalization(),
+    # keras.layers.Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same'),
+    # keras.layers.BatchNormalization(axis=3),
+    # keras.layers.MaxPooling2D(pool_size=(2, 2), padding='same'),
+    # keras.layers.Dropout(0.3),
+    # keras.layers.Conv2D(64, kernel_size=(3, 3), strides=2, activation='relu', padding='same'),
+    # keras.layers.BatchNormalization(),
+    # keras.layers.Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same'),
+    # keras.layers.BatchNormalization(axis=3),
+    # keras.layers.MaxPooling2D(pool_size=(2, 2), padding='same'),
+    # keras.layers.Dropout(0.3),
+    # keras.layers.Conv2D(128, kernel_size=(3, 3), strides=1, activation='relu', padding='same'),
+    # keras.layers.BatchNormalization(),
+    # keras.layers.Conv2D(128, kernel_size=(3, 3), activation='relu', padding='same'),
+    # keras.layers.BatchNormalization(axis=3),
+    # keras.layers.MaxPooling2D(pool_size=(2, 2), padding='same'),
+    # keras.layers.Dropout(0.5),
+    # keras.layers.Conv2D(256, kernel_size=(3, 3), strides=1, activation='relu', padding='same'),
+    # keras.layers.BatchNormalization(),
+    # keras.layers.Conv2D(256, kernel_size=(3, 3), activation='relu', padding='same'),
+    # keras.layers.BatchNormalization(axis=3),
+    # keras.layers.MaxPooling2D(pool_size=(2, 2), padding='same'),
+    # keras.layers.Dropout(0.5),
+    # keras.layers.Conv2D(512, kernel_size=(3, 3), strides=1, activation='relu', padding='same'),
+    # keras.layers.BatchNormalization(),
+    # keras.layers.Conv2D(512, kernel_size=(3, 3), activation='relu', padding='same'),
+    # keras.layers.BatchNormalization(axis=3),
+    # keras.layers.MaxPooling2D(pool_size=(2, 2), padding='same'),
+    # keras.layers.Dropout(0.5),
+    # keras.layers.Conv2D(1024, kernel_size=(3, 3), strides=1, activation='relu', padding='same'),
+    # keras.layers.BatchNormalization(),
+    # keras.layers.Conv2D(1024, kernel_size=(3, 3), activation='relu', padding='same'),
+    # keras.layers.BatchNormalization(axis=3),
+    # keras.layers.MaxPooling2D(pool_size=(2, 2), padding='same'),
+    # keras.layers.Dropout(0.5),
+    # keras.layers.Flatten(),
+    # keras.layers.Dense(units=512, activation='relu'),
+    # keras.layers.BatchNormalization(),
+    # keras.layers.Dropout(0.5),
+    # keras.layers.Dense(units=128, activation='relu'),
+    # keras.layers.Dropout(0.25),
+    # keras.layers.Dense(7, activation='softmax')
     keras.layers.SeparableConv2D(32, (3, 3), padding="same",
-                                 input_shape=(256, 256, 3)),
+                                 input_shape=(512, 512, 1)),
     keras.layers.Activation("relu"),
     keras.layers.BatchNormalization(axis=-1),
     keras.layers.MaxPooling2D(pool_size=(2, 2)),
@@ -206,11 +250,9 @@ model = keras.Sequential([
     keras.layers.Activation("relu"),
     keras.layers.BatchNormalization(),
     keras.layers.Dropout(0.5),
-
-    # softmax classifier
     keras.layers.Dense(7),
     keras.layers.Activation("softmax")
-    # keras.layers.Flatten(input_shape=(256,256,3)),
+    # keras.layers.Flatten(input_shape=(256,256,1)),
     # #keras.layers.SeparableConv2D(32,(3,3), padding="same"),
     # keras.layers.Activation("relu"),
     # #keras.layers.MaxPool2D(pool_size=(2,2)),
@@ -221,13 +263,15 @@ model = keras.Sequential([
 
 ])
 
-model.compile(optimizer='adam',
+model.compile(optimizer='rmsprop',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
-model.fit(pictures, labels, epochs=9)
+model.fit(pictures, labels, epochs=12, use_multiprocessing=True)
 # model.fit(pictures,labels, epochs=9)
 # model.fit(train_images, train_labels, epochs=5)
-test_loss, test_acc = model.evaluate(test_pics, test_labels)
+test_loss, test_acc = model.evaluate(test_pics, test_labels,use_multiprocessing=True)
 
 print('Test accuracy:', test_acc)
+print(test_labels)
+print(model.predict(test_pics,verbose=1,use_multiprocessing=True))
